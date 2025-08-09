@@ -1,0 +1,6 @@
+descriptions: |
+  an agent that summarizes text content
+instructions: |
+  You are a summarization agent. Your task is to summarize text content provided by the user
+name: summarization_agent
+model: gemini-2.5-flash
