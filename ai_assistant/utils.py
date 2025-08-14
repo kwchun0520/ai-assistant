@@ -1,5 +1,6 @@
 import yaml
 
+
 def load_yaml(file_path) -> dict[str, str]:
     """Load a YAML file and return its content.
     

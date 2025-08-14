@@ -1,11 +1,12 @@
-from google.adk.agents import Agent
-from dotenv import load_dotenv
-from ai_assistant.subagents import google_search_agent
-from ai_assistant.subagents import summarization_agent
 from pathlib import Path
-from ai_assistant.utils import load_yaml
+
+from dotenv import load_dotenv
+from google.adk.agents import Agent
 from google.adk.tools.agent_tool import AgentTool
 
+from ai_assistant.subagents import (google_search_agent, image_agent,
+                                    summarization_agent)
+from ai_assistant.utils import load_yaml
 
 load_dotenv()
 
@@ -18,6 +19,7 @@ root_agent = Agent(
     description=CONFIG["descriptions"],
     sub_agents=[
         summarization_agent,
+        image_agent,
     ],
     tools=[AgentTool(agent=google_search_agent)],
     instruction=CONFIG["instructions"]

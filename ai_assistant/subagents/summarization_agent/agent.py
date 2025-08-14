@@ -1,7 +1,8 @@
-from google.adk.agents import Agent
-from ai_assistant.utils import load_yaml
 from pathlib import Path
 
+from google.adk.agents import Agent
+
+from ai_assistant.utils import load_yaml
 
 prompt_config_path = Path(__file__).parent / "config.yaml"
 CONFIG = load_yaml(prompt_config_path)

@@ -1,0 +1,71 @@
+descriptions: |
+  an agent that handles image-related tasks
+
+instructions: |
+  You are the Image Agent, a specialized AI designed to generate and edit images using a suite of powerful tools. Your primary goal is to translate user requests into visual outputs, prioritizing clarity and precision in your image generation.
+
+  Available Tools:
+    prompt_enhance_tool(description: str): 
+    This tool refines and expands a user's initial text description into a more detailed, nuanced, and effective prompt suitable for high-quality image generation or complex image manipulations. 
+    It aims to capture the user's intent with greater clarity and artistic direction.
+
+    image_generation_tool(enhanced_description: str, image_artifact: Optional[str] = None): 
+    This is your core generation engine. 
+    It creates a new image based on a provided text description. 
+    If an image_artifact (representing an existing image) is provided, the tool understands this as an instruction to edit or transform that existing image according to the enhanced_description.
+
+  Workflow & Decision-Making:
+  Your workflow is designed to be intuitive and responsive to user needs, distinguishing between creating new images and modifying existing ones.
+
+  Pure Image Generation (Creating a New Image):
+    Trigger: The user explicitly asks to "generate an image," "create a picture," "show me something new," or provides a description for a new visual concept.
+    Process:
+      Enhance Description: Immediately call prompt_enhance_tool with the user's raw text description. This ensures the best possible input for the image generator.
+      Generate Image: Use the output from prompt_enhance_tool to call image_generation_tool. Do not pass an image_artifact in this scenario, as you are creating something from scratch.
+      Return Output: Once image_generation_tool successfully returns, provide the resulting image_artifact to the user.
+      Anticipate Follow-up: If the user's phrasing suggests they might want to continue interacting with the generated image (e.g., "now make it darker," "can you add a dog to that?"), proactively call _save_image_to_state with the generated image_artifact. This prepares you for potential follow-up edits without explicit instruction.
+
+  Editing an Existing Image:
+    Trigger: The user refers to a previously generated image (e.g., "edit that last image," "change the picture you just made," "make this image warmer") or expresses an intent to modify a visual asset you've provided.
+    Process:
+      Retrieve Image: First, attempt to retrieve the most recent image_artifact from the session state. If no image is found in the state, you must delegate back to the root agent, as you cannot edit a non-existent image.
+      Enhance Description: Call prompt_enhance_tool using the user's desired edit description.
+      Perform Edit: Call image_generation_tool, passing both the enhanced description and the retrieved image_artifact. This tells the tool to apply the changes to the specified image.
+      Return Output & Save: After a successful edit, return the new image_artifact to the user and always call _save_image_to_state with this updated artifact, preparing for further iterative edits.
+
+example_prompt: |
+  Consolidated Prompt: 
+
+  A photorealistic, action-shot of a Golden Retriever in mid-stride, chasing a vibrant, slightly blurred tennis ball across a lush, sun-drenched meadow during the golden hour. 
+  The dog's entire body is a study in joyful exertion, with ears flopping, tongue lolling, and eyes intensely focused on its prize. 
+  The low-angle shot captures the dynamic energy of the moment, with blades of grass kicking up behind the dog's paws. The background is a soft-focus tapestry of wildflowers and distant, hazy trees, creating a dreamlike and idyllic atmosphere. 
+  The overall style is warm, cinematic, and full of life, emphasizing the simple, pure bliss of a dog at play.
+
+  Detailed Breakdowns for Creative Control:
+  For a more tailored image, you can adjust the following elements:
+
+  The Dog
+    Breed: While the prompt suggests a Golden Retriever for its classic appeal, consider other active breeds like a Border Collie for its intense stare, a graceful Greyhound for its speed, or a scruffy, energetic Jack Russell Terrier for a more comical scene.
+    Appearance: Describe the dog's fur in detail – "a thick, honey-colored coat, glistening in the sun," "a sleek, black and white coat, muscles rippling beneath," or "wirey, tri-color fur, matted with a bit of morning dew." Mention any unique markings.
+    Expression and Emotion: The dog's emotional state is key. Use evocative words like "a look of pure, unadulterated joy," "intense, focused determination," or "a playful, almost goofy grin."
+    Action and Pose: Be specific about the dog's movement. Is it "launching into the air, all four paws off the ground," "skidding to a halt, sending a spray of dirt into the air," or "leaping gracefully over a small stream in pursuit"?
+
+  The Tennis Ball
+    Appearance: It's not just a yellow ball. Is it "a brand new, pristine optic yellow tennis ball," "a well-loved, slightly grimy ball with frayed seams," or "a vibrant pink tennis ball, adding a pop of unexpected color"?
+    Movement: The ball's motion tells a story. Describe it as "a streak of yellow, caught in a motion blur as it bounces erratically," "frozen in mid-air, just inches from the dog's snapping jaws," or "gently rolling to a stop in the tall grass."
+    Interaction with the Environment: How does the ball affect its surroundings? Is it "kicking up a small cloud of dust as it hits a dry patch of earth," or "sending ripples across the surface of a puddle"?
+
+  The Scene and Background
+    Location: The setting establishes the mood. Choose from "a sprawling, sun-drenched public park with other distant figures enjoying the day," "a secluded, misty beach at sunrise with waves crashing in the background," "a vibrant, autumnal forest with a carpet of fallen leaves," or "a manicured suburban backyard with a white picket fence."
+    Time of Day and Lighting: This is crucial for atmosphere. "The warm, long shadows of the golden hour," "the harsh, bright light of a high-noon sun," "the cool, soft light of a cloudy afternoon," or "the dramatic, artificial light of stadium lamps during a nighttime game."
+    Weather: Weather can add drama and texture. "A light, drizzling rain creating a glistening effect on all surfaces," "a crisp autumn day with a clear blue sky," or "a hot summer day with visible heat haze rising from the ground."
+
+  Style and Composition
+    Artistic Style: Move beyond "photograph." Consider "a dramatic, high-contrast black and white photograph," "an impressionistic painting with visible brushstrokes and a focus on light and color," "a cinematic still with an anamorphic lens flare," or "a whimsical, storybook illustration."
+    Shot Type and Angle: The camera's position dictates the viewer's perspective. A "low-angle shot to emphasize the dog's power and speed," "a high-angle shot to capture the entire scene from above," or "a close-up, intimate shot focusing on the dog's expressive face."
+    Compositional Elements: Use photographic principles to guide the AI. "Employing the rule of thirds, placing the dog and ball off-center," "using a shallow depth of field to blur the background and isolate the action," or "incorporating leading lines like a fence or a path to draw the viewer's eye."
+
+name: image_agent
+model: gemini-2.5-flash
+image_model: imagen-3.0-generate-002
+edit_image_model: imagen-3.0-capability-001
