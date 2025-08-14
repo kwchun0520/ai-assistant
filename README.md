@@ -9,6 +9,7 @@ This AI Assistant leverages a hierarchical agent structure to break down complex
 - **Root Agent**: Orchestrates task delegation and response synthesis
 - **Google Search Agent**: Performs web searches to retrieve relevant information
 - **Summarization Agent**: Condenses and formats information for concise responses
+- **Image Agent**: Handles image-related tasks (generation/processing)
 
 ## Features
 
@@ -36,12 +37,13 @@ This AI Assistant leverages a hierarchical agent structure to break down complex
 2. Create and activate a virtual environment with uv:
    ```bash
    uv venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   source .venv/bin/activate  # macOS/Linux
+   # On Windows: .venv\Scripts\activate
    ```
 
-3. Install dependencies:
+3. Install dependencies (from pyproject.toml):
    ```bash
-   uv sync
+   uv sync --force
    ```
 
 4. Create a `.env` file with your API keys:
@@ -89,42 +91,113 @@ Guide:
 
 ```
 ai_assistant/
-├── __init__.py             # Package init
+├── __init__.py
 ├── agent.py                # Root agent definition
 ├── config.yaml             # Main configuration
 ├── subagents/
-│   ├── __init__.py         # Subpackage init
+│   ├── __init__.py
 │   ├── google_search_agent/
-│   │   ├── __init__.py     # Subpackage init
-│   │   ├── agent.py        # Google search agent
-│   │   └── config.yaml     # Search agent configuration
+│   │   ├── __init__.py
+│   │   ├── tools.py        # Tool definitions for this agent (e.g., google_search)
+│   │   ├── agent.py        # Google search agent (imports from tools.py)
+│   │   └── config.yaml
 │   ├── summarization_agent/
-│   │   ├── __init__.py     # Subpackage init
-│   │   ├── agent.py        # Summarization agent
-│   │   └── config.yaml     # Summarization agent configuration
-└── utils.py                # Utility functions
+│   │   ├── __init__.py
+│   │   ├── tools.py        # Optional: tools specific to summarization
+│   │   ├── agent.py
+│   │   └── config.yaml
+│   ├── image_agent/
+│   │   ├── __init__.py
+│   │   ├── tools.py        # Optional: image tools
+│   │   ├── agent.py
+│   │   └── config.yaml
+└── utils.py
+```
+
+## Tools per subagent
+
+Keep each subagent’s tools in a local `tools.py` and import them in that agent’s `agent.py`.
+
+Example (google_search_agent):
+
+```python
+# filepath: ai_assistant/subagents/google_search_agent/tools.py
+from google.adk.tools import google_search
+
+__all__ = ["google_search"]
+```
+
+```python
+# filepath: ai_assistant/subagents/google_search_agent/agent.py
+from pathlib import Path
+from google.adk.agents import Agent
+from .tools import google_search
+from ai_assistant.utils import load_yaml
+
+CONFIG = load_yaml(Path(__file__).parent / "config.yaml")
+
+google_search_agent = Agent(
+    name=CONFIG["name"],
+    model=CONFIG["model"],
+    description=CONFIG["descriptions"],
+    tools=[google_search],  # imported from tools.py
+    instruction=CONFIG["instructions"],
+)
+```
+
+Root agent composition (wrap an agent as a tool if desired):
+
+```python
+# filepath: ai_assistant/agent.py
+from google.adk.agents import Agent
+from google.adk.tools.agent_tool import AgentTool
+from ai_assistant.subagents.google_search_agent.agent import google_search_agent
+from ai_assistant.subagents.summarization_agent.agent import summarization_agent
+from ai_assistant.subagents.image_agent.agent import image_agent
+from ai_assistant.utils import load_yaml
+from pathlib import Path
+
+CONFIG = load_yaml(Path(__file__).parent / "config.yaml")
+
+root_agent = Agent(
+    name=CONFIG["name"],
+    model=CONFIG["model"],
+    description=CONFIG["descriptions"],
+    sub_agents=[summarization_agent, image_agent],
+    tools=[AgentTool(agent=google_search_agent)],
+    instruction=CONFIG["instructions"],
+)
 ```
 
 ## Configuration
 
 Each agent can be configured via its respective `config.yaml` file:
 
-- `model`: Specifies which Gemini model to use
+- `model`: Specifies which model to use (ensure tool support if using tools)
 - `name`: Agent identifier
 - `descriptions`: Agent's role and capabilities
 - `instructions`: Specific guidance for the agent
 
-## Extending
-
-Add new subagents by:
-
-1. Creating a new directory under `subagents/`
-2. Implementing an agent definition and configuration
-3. Importing and adding to the root agent
-
 ## Troubleshooting
 
-- **Tool use errors**: Ensure the model specified in config supports tool use (e.g., gemini-1.5-pro-latest)
-- **Import errors**: Check that agent instances are imported correctly from their modules
+- Import errors (module has no attribute 'name'):
+  - Import the agent instance directly:
+    ```python
+    from ai_assistant.subagents.google_search_agent.agent import google_search_agent
+    ```
+- Validation error for sub_agents:
+  - Ensure `sub_agents` contains agent instances, not modules:
+    ```python
+    from ai_assistant.subagents.summarization_agent.agent import summarization_agent
+    ```
+- Tool use errors:
+  - Use a model that supports tools per ADK docs; function calling support alone may be insufficient.
+- uv environment:
+  - If packages don’t install, re-run:
+    ```bash
+    uv sync --force
+    ```
 
 ## License
+
+[Add your license information here]
